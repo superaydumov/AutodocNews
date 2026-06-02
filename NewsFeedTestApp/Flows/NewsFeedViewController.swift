@@ -7,13 +7,11 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+final class NewsFeedViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        view.backgroundColor = .systemBackground
+        title = "News Feed Test App"
     }
-
-
 }
-
