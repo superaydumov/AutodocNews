@@ -87,6 +87,7 @@ final class NewsCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupSubViews()
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -122,7 +123,9 @@ private extension NewsCell {
 
         categoryPaddingView.addSubview(categoryLabel)
         categoryLabel.translatesAutoresizingMaskIntoConstraints = false
+    }
 
+    func setupConstraints() {
         NSLayoutConstraint.activate([
             paddingImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
             paddingImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
