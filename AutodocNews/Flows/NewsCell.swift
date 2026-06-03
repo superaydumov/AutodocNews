@@ -16,23 +16,46 @@ final class NewsCell: UICollectionViewCell {
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 8
-        imageView.backgroundColor = .systemMint
+        imageView.backgroundColor = .lightGray
 
         return imageView
+    }()
+
+    private lazy var categoryPaddingView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black.withAlphaComponent(0.5)
+        view.layer.cornerRadius = 10
+
+        return view
+    }()
+
+    private lazy var categoryLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .white.withAlphaComponent(0.75)
+
+        return label
+    }()
+
+    private lazy var bottomGradientView = BottomGradientView(
+        startAlpha: 0.0,
+        endAlpha: 0.45
+    )
+
+    private lazy var bottomStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [titleLabel, dateLabel])
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.alignment = .leading
+
+        return stack
     }()
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 17, weight: .medium)
         label.numberOfLines = 2
-
-        return label
-    }()
-
-    private lazy var categoryLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = .white
 
         return label
     }()
@@ -40,10 +63,17 @@ final class NewsCell: UICollectionViewCell {
     private lazy var dateLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .regular)
-        label.textColor = .secondaryLabel
+        label.textColor = .white.withAlphaComponent(0.75)
 
         return label
     }()
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        categoryLabel.text = nil
+        dateLabel.text = nil
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -70,13 +100,16 @@ private extension NewsCell {
 
         [
             paddingImageView,
-            categoryLabel,
-            titleLabel,
-            dateLabel
+            bottomGradientView,
+            categoryPaddingView,
+            bottomStack
         ].forEach {
             contentView.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+
+        categoryPaddingView.addSubview(categoryLabel)
+        categoryLabel.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             paddingImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
@@ -84,15 +117,23 @@ private extension NewsCell {
             paddingImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             paddingImageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
-            categoryLabel.topAnchor.constraint(equalTo: paddingImageView.topAnchor, constant: 8),
-            categoryLabel.leadingAnchor.constraint(equalTo: paddingImageView.leadingAnchor, constant: 8),
+            bottomGradientView.topAnchor.constraint(equalTo: contentView.centerYAnchor),
+            bottomGradientView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            bottomGradientView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            bottomGradientView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            categoryPaddingView.topAnchor.constraint(equalTo: paddingImageView.topAnchor, constant: 8),
+            categoryPaddingView.leadingAnchor.constraint(equalTo: paddingImageView.leadingAnchor, constant: 8),
+            categoryPaddingView.heightAnchor.constraint(equalToConstant: 20),
 
-            dateLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            dateLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            dateLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8)
+            categoryLabel.topAnchor.constraint(equalTo: categoryPaddingView.topAnchor, constant: 4),
+            categoryLabel.leadingAnchor.constraint(equalTo: categoryPaddingView.leadingAnchor, constant: 8),
+            categoryLabel.trailingAnchor.constraint(equalTo: categoryPaddingView.trailingAnchor, constant: -8),
+            categoryLabel.bottomAnchor.constraint(equalTo: categoryPaddingView.bottomAnchor, constant: -4),
+
+            bottomStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            bottomStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            bottomStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
     }
 }
