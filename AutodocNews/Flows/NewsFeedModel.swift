@@ -27,6 +27,6 @@ struct NewsFeedItem: Codable, Hashable {
 }
 
 struct NewsFeedResponse: Codable {
-    let items: [NewsFeedItem]
+    let news: [NewsFeedItem]
     let totalCount: Int
 }
