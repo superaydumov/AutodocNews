@@ -70,14 +70,14 @@ private extension NewsFeedViewController {
         UICollectionViewCompositionalLayout { _, _ in
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .estimated(180)
+                heightDimension: .absolute(180)
             )
 
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .estimated(180)
+                heightDimension: .absolute(180)
             )
 
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])

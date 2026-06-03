@@ -12,7 +12,8 @@ final class NewsCell: UICollectionViewCell {
     // MARK: - Stored properties
 
     static let reuseIdentifier = "NewsCell"
-    private let categoryPaddingHeight: CGFloat = 20
+    private let categoryPaddingHeight: CGFloat = 24
+    private var imageLoadTask: Task<Void, Never>?
 
     // MARK: - Computed properties
 
@@ -29,7 +30,7 @@ final class NewsCell: UICollectionViewCell {
     private lazy var categoryPaddingView: UIView = {
         let view = UIView()
         view.backgroundColor = .black.withAlphaComponent(0.5)
-        view.layer.cornerRadius = 10
+        view.layer.cornerRadius = 12
 
         return view
     }()
@@ -77,6 +78,9 @@ final class NewsCell: UICollectionViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        imageLoadTask?.cancel()
+        imageLoadTask = nil
+        paddingImageView.image = nil
         titleLabel.text = nil
         categoryLabel.text = nil
         dateLabel.text = nil
@@ -99,6 +103,23 @@ final class NewsCell: UICollectionViewCell {
         titleLabel.text = item.title
         categoryLabel.text = item.categoryType
         dateLabel.text = item.publishedDate
+
+        imageLoadTask?.cancel()
+        paddingImageView.image = nil
+
+        guard let imageUrlString = item.titleImageUrl else {
+            paddingImageView.image = UIImage(systemName: "photo")
+            paddingImageView.contentMode = .scaleAspectFit
+            paddingImageView.tintColor = .white.withAlphaComponent(0.75)
+            return
+        }
+
+        imageLoadTask = Task { [weak self] in
+            guard let self else { return }
+            let image = try? await ImageLoader.shared.loadImage(urlString: imageUrlString)
+            guard !Task.isCancelled else { return }
+            self.paddingImageView.image = image
+        }
     }
 }
 
