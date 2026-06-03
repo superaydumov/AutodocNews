@@ -13,5 +13,10 @@ final class NewsFeedViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         title = "News Feed Test App"
+
+        Task {
+            let response = try await NetworkService.shared.fetchNewsFeed(page: 1, pageSize: 5)
+            print(response.news)
+        }
     }
 }
