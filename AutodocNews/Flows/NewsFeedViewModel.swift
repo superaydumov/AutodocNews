@@ -7,46 +7,54 @@
 
 import Foundation
 
-final class NewsFeedViewModel {
+@MainActor
+final class NewsFeedViewModel: ObservableObject {
 
-    var items = [NewsFeedItem]()
-    var isLoading: Bool = false
-    var errorMessage: String?
+    @Published var items = [NewsFeedItem]()
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
 
     private let networkService = NetworkService.shared
     private let pageSize: Int = 15
     private var currentPage: Int = 1
     private var totalCount = Int.max
+    private var loadingTask: Task<Void, Never>?
 
     private var canLoadNextPage: Bool {
         items.count < totalCount
     }
 
-    func loadFirstPage() async {
+    func loadFirstPage() {
         currentPage = 1
         items.removeAll()
-        await loadNextPageIfNeeded()
+        loadNextPageIfNeeded()
     }
 
-    func loadNextPageIfNeeded() async {
+    func loadNextPageIfNeeded() {
         guard !isLoading, canLoadNextPage else { return }
 
-        isLoading = true
-        errorMessage = nil
+        loadingTask = Task {
+            isLoading = true
+            errorMessage = nil
 
-        do {
-            let response = try await networkService.fetchNewsFeed(
-                page: currentPage,
-                pageSize: pageSize
-            )
+            do {
+                let response = try await networkService.fetchNewsFeed(
+                    page: currentPage,
+                    pageSize: pageSize
+                )
 
-            totalCount = response.totalCount
-            items.append(contentsOf: response.news)
-            currentPage += 1
-        } catch {
-            errorMessage = error.localizedDescription
+                totalCount = response.totalCount
+                items.append(contentsOf: response.news)
+                currentPage += 1
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+
+            isLoading = false
         }
+    }
 
-        isLoading = false
+    deinit {
+        loadingTask?.cancel()
     }
 }
