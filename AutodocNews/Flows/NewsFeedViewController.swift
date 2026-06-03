@@ -12,7 +12,7 @@ final class NewsFeedViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        title = "News Feed Test App"
+        title = "Новости"
 
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
@@ -25,15 +25,30 @@ final class NewsFeedViewController: UIViewController {
             imageView.heightAnchor.constraint(equalToConstant: 200)
         ])
 
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.font = .systemFont(ofSize: 16)
+        textView.textAlignment = .center
+        view.addSubview(textView)
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 20),
+            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            textView.heightAnchor.constraint(equalToConstant: 100)
+        ])
+
+        let viewModel = NewsFeedViewModel()
+
         Task {
-            let response = try await NetworkService.shared.fetchNewsFeed(page: 1, pageSize: 5)
+            await viewModel.loadFirstPage()
+            print(viewModel.items)
+            textView.text = viewModel.items[4].title
 
+            let item = viewModel.items[4]
             let loadedImage = try await ImageLoader.shared.loadImage(
-                urlString: response.news[0].titleImageUrl
-                ?? "no image url"
+                urlString: item.titleImageUrl ?? "no image url"
             )
-
-            print(response.news)
             imageView.image = loadedImage
         }
     }
