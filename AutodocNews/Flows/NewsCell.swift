@@ -9,7 +9,12 @@ import UIKit
 
 final class NewsCell: UICollectionViewCell {
 
+    // MARK: - Stored properties
+
     static let reuseIdentifier = "NewsCell"
+    private let categoryPaddingHeight: CGFloat = 20
+
+    // MARK: - Computed properties
 
     private lazy var paddingImageView: UIImageView = {
         let imageView = UIImageView()
@@ -45,7 +50,7 @@ final class NewsCell: UICollectionViewCell {
     private lazy var bottomStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [titleLabel, dateLabel])
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = AppSpacing.small
         stack.alignment = .leading
 
         return stack
@@ -68,12 +73,16 @@ final class NewsCell: UICollectionViewCell {
         return label
     }()
 
+    // MARK: - Lifecycle
+
     override func prepareForReuse() {
         super.prepareForReuse()
         titleLabel.text = nil
         categoryLabel.text = nil
         dateLabel.text = nil
     }
+
+    // MARK: - Initialisers
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -83,13 +92,16 @@ final class NewsCell: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
 
+    // MARK: - Public API
+
     func configure(with item: NewsFeedItem) {
         titleLabel.text = item.title
         categoryLabel.text = item.categoryType
         dateLabel.text = item.publishedDate
     }
-
 }
+
+    // MARK: - Private methods
 
 private extension NewsCell {
 
@@ -122,18 +134,45 @@ private extension NewsCell {
             bottomGradientView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             bottomGradientView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
-            categoryPaddingView.topAnchor.constraint(equalTo: paddingImageView.topAnchor, constant: 8),
-            categoryPaddingView.leadingAnchor.constraint(equalTo: paddingImageView.leadingAnchor, constant: 8),
-            categoryPaddingView.heightAnchor.constraint(equalToConstant: 20),
+            categoryPaddingView.topAnchor.constraint(
+                equalTo: paddingImageView.topAnchor,
+                constant: AppSpacing.small
+            ),
+            categoryPaddingView.leadingAnchor.constraint(
+                equalTo: paddingImageView.leadingAnchor,
+                constant: AppSpacing.small
+            ),
+            categoryPaddingView.heightAnchor.constraint(equalToConstant: categoryPaddingHeight),
 
-            categoryLabel.topAnchor.constraint(equalTo: categoryPaddingView.topAnchor, constant: 4),
-            categoryLabel.leadingAnchor.constraint(equalTo: categoryPaddingView.leadingAnchor, constant: 8),
-            categoryLabel.trailingAnchor.constraint(equalTo: categoryPaddingView.trailingAnchor, constant: -8),
-            categoryLabel.bottomAnchor.constraint(equalTo: categoryPaddingView.bottomAnchor, constant: -4),
+            categoryLabel.topAnchor.constraint(
+                equalTo: categoryPaddingView.topAnchor,
+                constant: AppSpacing.extraSmall
+            ),
+            categoryLabel.leadingAnchor.constraint(
+                equalTo: categoryPaddingView.leadingAnchor,
+                constant: AppSpacing.small
+            ),
+            categoryLabel.trailingAnchor.constraint(
+                equalTo: categoryPaddingView.trailingAnchor,
+                constant: -AppSpacing.small
+            ),
+            categoryLabel.bottomAnchor.constraint(
+                equalTo: categoryPaddingView.bottomAnchor,
+                constant: -AppSpacing.extraSmall
+            ),
 
-            bottomStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            bottomStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            bottomStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
+            bottomStack.leadingAnchor.constraint(
+                equalTo: contentView.leadingAnchor,
+                constant: AppSpacing.small
+            ),
+            bottomStack.trailingAnchor.constraint(
+                equalTo: contentView.trailingAnchor,
+                constant: -AppSpacing.small
+            ),
+            bottomStack.bottomAnchor.constraint(
+                equalTo: contentView.bottomAnchor,
+                constant: -AppSpacing.small
+            )
         ])
     }
 }
