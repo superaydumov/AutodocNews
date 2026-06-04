@@ -20,6 +20,8 @@ final class NewsFeedViewController: UIViewController {
     }
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, NewsFeedItem>?
+    private let cellHeight: CGFloat = 180
+    private let triggerAmountLimit = 5
 
     // MARK: - Computed properties
 
@@ -27,8 +29,11 @@ final class NewsFeedViewController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeCollectionViewLayout())
         collectionView.backgroundColor = .clear
         collectionView.delegate = self
-        collectionView.register(NewsCell.self, forCellWithReuseIdentifier: NewsCell.reuseIdentifier)
         collectionView.refreshControl = refreshControl
+        collectionView.register(
+            NewsCell.self,
+            forCellWithReuseIdentifier: NewsCell.reuseIdentifier
+        )
 
         return collectionView
     }()
@@ -65,6 +70,16 @@ final class NewsFeedViewController: UIViewController {
 
 extension NewsFeedViewController: UICollectionViewDelegate {
 
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        let markerItem = viewModel.items.count - triggerAmountLimit
+        if indexPath.item >= markerItem {
+            viewModel.loadNextPageIfNeeded()
+        }
+    }
 }
 
     // MARK: - Private methods
@@ -87,21 +102,26 @@ private extension NewsFeedViewController {
         UICollectionViewCompositionalLayout { _, _ in
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(180)
+                heightDimension: .absolute(self.cellHeight)
             )
 
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(180)
+                heightDimension: .absolute(self.cellHeight)
             )
 
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
             let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
-            section.interGroupSpacing = 8
+            section.contentInsets = NSDirectionalEdgeInsets(
+                top: AppSpacing.small,
+                leading: AppSpacing.medium,
+                bottom: AppSpacing.small,
+                trailing: AppSpacing.medium
+            )
+            section.interGroupSpacing = AppSpacing.small
 
             return section
         }
@@ -131,6 +151,16 @@ private extension NewsFeedViewController {
             .sink { [weak self] items in
                 guard let self else { return }
                 self.applySnapshot(items)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .receive(on: RunLoop.main)
+            .sink { [weak self] loading in
+                guard let self else { return }
+                if !loading {
+                    self.refreshControl.endRefreshing()
+                }
             }
             .store(in: &cancellables)
 
