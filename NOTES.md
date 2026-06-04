@@ -22,21 +22,6 @@
 - Combine (`sink`, `combineLatest`) позволяет соединить состояние вью-модели с реакцией вью-контроллера.
 - `NewsFeedViewModel` помечен `@MainActor`, что исключает ручное переключение потоков при изменении `@Published`-свойств.
 
----
-
-## Стек технологий
-
-| Компонент | Решение | Обоснование |
-|---|---|---|
-| UI | UIKit, programmatic layout | Контроль над каждым элементом, без зависимостей от XIB/Storyboard |
-| Реактивность | Combine | Встроен в SDK, устраняет вложенность колбэков |
-| Коллекция | `UICollectionViewCompositionalLayout` + `DiffableDataSource` | Адаптивные колонки без `invalidateLayout`, анимированные diff-обновления без `reloadData` |
-| Сеть | `async/await` + `URLSession` | Линейный код без Callback-hell, встроенная отмена через `Task.cancel()` |
-| Изображения | Кастомный `ImageLoader` с `NSCache` | Нет избыточного повторного скачивания; `Task.isCancelled` гарантирует, что ответ не применится к переиспользованной ячейке |
-| Качество кода | SwiftLint | Единообразный стиль, запрет `force_unwrapping`, `implicitly_unwrapped_optional` и других опасных конструкций |
-
----
-
 ## Ключевые компоненты
 
 ### NetworkService
