@@ -7,6 +7,7 @@
 
 import UIKit
 import Combine
+import SafariServices
 
 final class NewsFeedViewController: UIViewController {
 
@@ -95,6 +96,17 @@ extension NewsFeedViewController: UICollectionViewDelegate {
               let footer = view as? NewsFooterLoaderView else { return }
         footer.startAnimating()
         viewModel.loadNextPageIfNeeded()
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        guard let item = dataSource?.itemIdentifier(for: indexPath),
+              let url = URL(string: item.fullUrl) else { return }
+
+        let safari = SFSafariViewController(url: url)
+        present(safari, animated: true)
     }
 }
 
