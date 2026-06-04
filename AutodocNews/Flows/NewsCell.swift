@@ -83,6 +83,7 @@ final class NewsCell: UICollectionViewCell {
         imageLoadTask?.cancel()
         imageLoadTask = nil
         shimmerPlaceholderView.stopAnimating()
+        isUserInteractionEnabled = true
         paddingImageView.alpha = 1
         paddingImageView.image = nil
         titleLabel.text = nil
@@ -112,9 +113,11 @@ final class NewsCell: UICollectionViewCell {
         paddingImageView.alpha = 0
         paddingImageView.image = nil
         shimmerPlaceholderView.startAnimating()
+        isUserInteractionEnabled = false
 
         guard let imageUrlString = item.titleImageUrl else {
             shimmerPlaceholderView.stopAnimating()
+            isUserInteractionEnabled = true
             paddingImageView.image = UIImage(systemName: "photo")
             paddingImageView.contentMode = .scaleAspectFit
             paddingImageView.tintColor = .white.withAlphaComponent(0.75)
@@ -135,6 +138,7 @@ final class NewsCell: UICollectionViewCell {
                 } completion: { _ in
                     self.shimmerPlaceholderView.stopAnimating()
                     self.shimmerPlaceholderView.alpha = 1
+                    self.isUserInteractionEnabled = true
                 }
             }
         }

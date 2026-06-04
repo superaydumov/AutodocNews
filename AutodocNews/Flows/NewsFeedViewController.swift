@@ -24,6 +24,7 @@ final class NewsFeedViewController: UIViewController {
     private weak var footerLoaderView: NewsFooterLoaderView?
     private let cellHeight: CGFloat = 180
     private let footerHeight: CGFloat = 48
+    private let widthParameter: CGFloat = 900
 
     // MARK: - Computed properties
 
@@ -114,6 +115,8 @@ extension NewsFeedViewController: UICollectionViewDelegate {
 
 private extension NewsFeedViewController {
 
+    // MARK: Layout methods
+
     func setupSubViews() {
         [collectionView, activityIndicator].forEach {
             view.addSubview($0)
@@ -132,9 +135,23 @@ private extension NewsFeedViewController {
     }
 
     func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        UICollectionViewCompositionalLayout { _, _ in
+        UICollectionViewCompositionalLayout { [weak self] _, environment in
+            guard let self else { return nil }
+
+            let width = environment.container.effectiveContentSize.width
+            let columns: Int
+
+            switch environment.traitCollection.horizontalSizeClass {
+            case .compact:
+                columns = 1
+            case .regular:
+                columns = width >= widthParameter ? 3 : 2
+            default:
+                columns = 1
+            }
+
             let itemSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
+                widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
                 heightDimension: .absolute(self.cellHeight)
             )
 
@@ -146,6 +163,7 @@ private extension NewsFeedViewController {
             )
 
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+            group.interItemSpacing = .fixed(AppSpacing.small)
 
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = NSDirectionalEdgeInsets(
@@ -170,6 +188,8 @@ private extension NewsFeedViewController {
             return section
         }
     }
+
+    // MARK: Data handling methods
 
     func setupDataSource() {
         dataSource = UICollectionViewDiffableDataSource(
@@ -250,6 +270,13 @@ private extension NewsFeedViewController {
         dataSource?.apply(snapshot, animatingDifferences: true)
     }
 
+    func refreshData() {
+        refreshControl.endRefreshing()
+        viewModel.loadFirstPage()
+    }
+
+    // MARK: Error handling
+
     func showError(_ message: String) {
         let alert = UIAlertController(
             title: "Ошибка",
@@ -278,10 +305,5 @@ private extension NewsFeedViewController {
         )
 
         present(alert, animated: true)
-    }
-
-    func refreshData() {
-        refreshControl.endRefreshing()
-        viewModel.loadFirstPage()
     }
 }
