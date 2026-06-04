@@ -28,8 +28,22 @@ final class NewsFeedViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.delegate = self
         collectionView.register(NewsCell.self, forCellWithReuseIdentifier: NewsCell.reuseIdentifier)
+        collectionView.refreshControl = refreshControl
 
         return collectionView
+    }()
+
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                self.refreshData()
+            },
+            for: .valueChanged
+        )
+
+        return refreshControl
     }()
 
     // MARK: - Lifecycle
@@ -136,5 +150,10 @@ private extension NewsFeedViewController {
         snapshot.appendItems(items, toSection: .main)
 
         dataSource?.apply(snapshot, animatingDifferences: true)
+    }
+
+    func refreshData() {
+        refreshControl.endRefreshing()
+        viewModel.loadFirstPage()
     }
 }
