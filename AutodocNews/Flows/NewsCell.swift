@@ -22,7 +22,6 @@ final class NewsCell: UICollectionViewCell {
 
     private lazy var paddingImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 8
         imageView.backgroundColor = .lightGray
@@ -129,6 +128,7 @@ final class NewsCell: UICollectionViewCell {
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 self.paddingImageView.image = image
+                self.paddingImageView.contentMode = .scaleAspectFill
                 UIView.animate(withDuration: 0.35, delay: 0, options: .curveEaseInOut) {
                     self.shimmerPlaceholderView.alpha = 0
                     self.paddingImageView.alpha = 1

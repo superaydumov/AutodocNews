@@ -38,6 +38,13 @@ final class NewsFeedViewController: UIViewController {
         return collectionView
     }()
 
+    private lazy var activityIndicator: LoaderView = {
+        let loader = LoaderView()
+        loader.isHidden = true
+
+        return loader
+    }()
+
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addAction(
@@ -87,14 +94,19 @@ extension NewsFeedViewController: UICollectionViewDelegate {
 private extension NewsFeedViewController {
 
     func setupSubViews() {
-        view.addSubview(collectionView)
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        [collectionView, activityIndicator].forEach {
+            view.addSubview($0)
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
 
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 
@@ -155,11 +167,19 @@ private extension NewsFeedViewController {
             .store(in: &cancellables)
 
         viewModel.$isLoading
+            .combineLatest(viewModel.$items)
             .receive(on: RunLoop.main)
-            .sink { [weak self] loading in
+            .sink { [weak self] isLoading, items in
                 guard let self else { return }
-                if !loading {
-                    self.refreshControl.endRefreshing()
+                if isLoading && items.isEmpty {
+                    self.activityIndicator.startAnimating()
+                    self.collectionView.isHidden = true
+                } else {
+                    self.activityIndicator.stopAnimating()
+                    self.collectionView.isHidden = false
+                    if !isLoading {
+                        self.refreshControl.endRefreshing()
+                    }
                 }
             }
             .store(in: &cancellables)
