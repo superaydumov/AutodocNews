@@ -18,9 +18,10 @@ final class NewsCell: UICollectionViewCell {
 
     // MARK: - Computed properties
 
+    private lazy var shimmerPlaceholderView = ShimmerPlaceholderView()
+
     private lazy var paddingImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 8
         imageView.backgroundColor = .lightGray
@@ -81,6 +82,8 @@ final class NewsCell: UICollectionViewCell {
         super.prepareForReuse()
         imageLoadTask?.cancel()
         imageLoadTask = nil
+        shimmerPlaceholderView.stopAnimating()
+        paddingImageView.alpha = 1
         paddingImageView.image = nil
         titleLabel.text = nil
         categoryLabel.text = nil
@@ -106,12 +109,16 @@ final class NewsCell: UICollectionViewCell {
         dateLabel.text = dateFormatter.formatDate(item.publishedDate)
 
         imageLoadTask?.cancel()
+        paddingImageView.alpha = 0
         paddingImageView.image = nil
+        shimmerPlaceholderView.startAnimating()
 
         guard let imageUrlString = item.titleImageUrl else {
+            shimmerPlaceholderView.stopAnimating()
             paddingImageView.image = UIImage(systemName: "photo")
             paddingImageView.contentMode = .scaleAspectFit
             paddingImageView.tintColor = .white.withAlphaComponent(0.75)
+            paddingImageView.alpha = 1
             return
         }
 
@@ -119,7 +126,17 @@ final class NewsCell: UICollectionViewCell {
             guard let self else { return }
             let image = try? await ImageLoader.shared.loadImage(urlString: imageUrlString)
             guard !Task.isCancelled else { return }
-            self.paddingImageView.image = image
+            await MainActor.run {
+                self.paddingImageView.image = image
+                self.paddingImageView.contentMode = .scaleAspectFill
+                UIView.animate(withDuration: 0.35, delay: 0, options: .curveEaseInOut) {
+                    self.shimmerPlaceholderView.alpha = 0
+                    self.paddingImageView.alpha = 1
+                } completion: { _ in
+                    self.shimmerPlaceholderView.stopAnimating()
+                    self.shimmerPlaceholderView.alpha = 1
+                }
+            }
         }
     }
 }
@@ -137,7 +154,8 @@ private extension NewsCell {
             paddingImageView,
             bottomGradientView,
             categoryPaddingView,
-            bottomStack
+            bottomStack,
+            shimmerPlaceholderView
         ].forEach {
             contentView.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
@@ -197,7 +215,12 @@ private extension NewsCell {
             bottomStack.bottomAnchor.constraint(
                 equalTo: contentView.bottomAnchor,
                 constant: -AppSpacing.small
-            )
+            ),
+
+            shimmerPlaceholderView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            shimmerPlaceholderView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            shimmerPlaceholderView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            shimmerPlaceholderView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
 }
