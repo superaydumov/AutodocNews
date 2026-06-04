@@ -139,7 +139,7 @@ private extension NewsFeedViewController {
             .receive(on: RunLoop.main)
             .sink { [weak self] errorMessage in
                 guard let self else { return }
-                // TODO: add an alert to show error message
+                self.showError(errorMessage)
             }
             .store(in: &cancellables)
     }
@@ -150,6 +150,36 @@ private extension NewsFeedViewController {
         snapshot.appendItems(items, toSection: .main)
 
         dataSource?.apply(snapshot, animatingDifferences: true)
+    }
+
+    func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Ошибка",
+            message: message,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "Повторить",
+                style: .default
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.refreshData()
+            }
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "Отмена",
+                style: .destructive
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.refreshControl.endRefreshing()
+            }
+        )
+
+        present(alert, animated: true)
     }
 
     func refreshData() {
