@@ -115,6 +115,8 @@ extension NewsFeedViewController: UICollectionViewDelegate {
 
 private extension NewsFeedViewController {
 
+    // MARK: Layout methods
+
     func setupSubViews() {
         [collectionView, activityIndicator].forEach {
             view.addSubview($0)
@@ -186,6 +188,8 @@ private extension NewsFeedViewController {
             return section
         }
     }
+
+    // MARK: Data handling methods
 
     func setupDataSource() {
         dataSource = UICollectionViewDiffableDataSource(
@@ -266,6 +270,13 @@ private extension NewsFeedViewController {
         dataSource?.apply(snapshot, animatingDifferences: true)
     }
 
+    func refreshData() {
+        refreshControl.endRefreshing()
+        viewModel.loadFirstPage()
+    }
+
+    // MARK: Error handling
+
     func showError(_ message: String) {
         let alert = UIAlertController(
             title: "Ошибка",
@@ -294,10 +305,5 @@ private extension NewsFeedViewController {
         )
 
         present(alert, animated: true)
-    }
-
-    func refreshData() {
-        refreshControl.endRefreshing()
-        viewModel.loadFirstPage()
     }
 }
