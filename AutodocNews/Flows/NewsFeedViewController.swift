@@ -24,6 +24,7 @@ final class NewsFeedViewController: UIViewController {
     private weak var footerLoaderView: NewsFooterLoaderView?
     private let cellHeight: CGFloat = 180
     private let footerHeight: CGFloat = 48
+    private let widthParameter: CGFloat = 900
 
     // MARK: - Computed properties
 
@@ -132,9 +133,23 @@ private extension NewsFeedViewController {
     }
 
     func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        UICollectionViewCompositionalLayout { _, _ in
+        UICollectionViewCompositionalLayout { [weak self] _, environment in
+            guard let self else { return nil }
+
+            let width = environment.container.effectiveContentSize.width
+            let columns: Int
+
+            switch environment.traitCollection.horizontalSizeClass {
+            case .compact:
+                columns = 1
+            case .regular:
+                columns = width >= widthParameter ? 3 : 2
+            default:
+                columns = 1
+            }
+
             let itemSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
+                widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
                 heightDimension: .absolute(self.cellHeight)
             )
 
@@ -146,6 +161,7 @@ private extension NewsFeedViewController {
             )
 
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+            group.interItemSpacing = .fixed(AppSpacing.small)
 
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = NSDirectionalEdgeInsets(
