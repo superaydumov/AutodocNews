@@ -10,6 +10,8 @@ import Combine
 
 final class NewsFeedViewController: UIViewController {
 
+    // MARK: - Stored properties
+
     private let viewModel = NewsFeedViewModel()
     private var cancellables = Set<AnyCancellable>()
 
@@ -18,6 +20,8 @@ final class NewsFeedViewController: UIViewController {
     }
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, NewsFeedItem>?
+
+    // MARK: - Computed properties
 
     private lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeCollectionViewLayout())
@@ -28,6 +32,8 @@ final class NewsFeedViewController: UIViewController {
         return collectionView
     }()
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
@@ -35,19 +41,23 @@ final class NewsFeedViewController: UIViewController {
 
         setupSubViews()
         setupDataSource()
-
-        viewModel.$items
-            .receive(on: RunLoop.main)
-            .sink { [weak self] items in
-                guard let self else { return }
-                self.applySnapshot(items)
-            }
-            .store(in: &cancellables)
+        setupBindings()
 
         viewModel.loadFirstPage()
     }
+}
 
-    private func setupSubViews() {
+    // MARK: - UICollectionViewDelegate
+
+extension NewsFeedViewController: UICollectionViewDelegate {
+
+}
+
+    // MARK: - Private methods
+
+private extension NewsFeedViewController {
+
+    func setupSubViews() {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -58,15 +68,8 @@ final class NewsFeedViewController: UIViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-}
 
-extension NewsFeedViewController: UICollectionViewDelegate {
-
-}
-
-private extension NewsFeedViewController {
-
-    private func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
+    func makeCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, _ in
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
@@ -90,7 +93,7 @@ private extension NewsFeedViewController {
         }
     }
 
-    private func setupDataSource() {
+    func setupDataSource() {
         dataSource = UICollectionViewDiffableDataSource(
             collectionView: collectionView
         ) { collectionView, indexPath, item in
@@ -108,7 +111,26 @@ private extension NewsFeedViewController {
         }
     }
 
-    private func applySnapshot(_ items: [NewsFeedItem]) {
+    func setupBindings() {
+        viewModel.$items
+            .receive(on: RunLoop.main)
+            .sink { [weak self] items in
+                guard let self else { return }
+                self.applySnapshot(items)
+            }
+            .store(in: &cancellables)
+
+        viewModel.$errorMessage
+            .compactMap { $0 }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] errorMessage in
+                guard let self else { return }
+                // TODO: add an alert to show error message
+            }
+            .store(in: &cancellables)
+    }
+
+    func applySnapshot(_ items: [NewsFeedItem]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, NewsFeedItem>()
         snapshot.appendSections([.main])
         snapshot.appendItems(items, toSection: .main)
