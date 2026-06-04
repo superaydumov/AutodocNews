@@ -29,22 +29,9 @@ final class MockNetworkService: NetworkServiceProtocol {
 @MainActor
 final class NewsFeedViewModelTests: XCTestCase {
 
-    private var viewModel: NewsFeedViewModel!
-    private var mockNetworkService: MockNetworkService!
+    private let mockNetworkService = MockNetworkService()
+    private lazy var viewModel = NewsFeedViewModel(networkService: mockNetworkService)
     private var cancellables = Set<AnyCancellable>()
-
-    override func setUp() {
-        super.setUp()
-        mockNetworkService = MockNetworkService()
-        viewModel = NewsFeedViewModel(networkService: mockNetworkService)
-    }
-
-    override func tearDown() {
-        cancellables.removeAll()
-        viewModel = nil
-        mockNetworkService = nil
-        super.tearDown()
-    }
 
     // MARK: - loadFirstPage test
 

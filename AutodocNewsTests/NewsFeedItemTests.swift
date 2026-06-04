@@ -2,6 +2,8 @@
 //  NewsFeedItemTests.swift
 //  AutodocNewsTests
 //
+//  Created by Айдумов Эльдар on 04.06.2026.
+//
 
 import XCTest
 @testable import AutodocNews
