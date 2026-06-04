@@ -7,7 +7,11 @@
 
 import Foundation
 
-actor NetworkService {
+protocol NetworkServiceProtocol {
+    func fetchNewsFeed(page: Int, pageSize: Int) async throws -> NewsFeedResponse
+}
+
+actor NetworkService: NetworkServiceProtocol {
     static let shared = NetworkService()
     private init() { }
 

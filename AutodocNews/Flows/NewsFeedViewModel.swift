@@ -14,7 +14,8 @@ final class NewsFeedViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
-    private let networkService = NetworkService.shared
+    private let networkService: NetworkServiceProtocol
+
     private let pageSize: Int = 15
     private var currentPage: Int = 1
     private var totalCount = Int.max
@@ -22,6 +23,10 @@ final class NewsFeedViewModel: ObservableObject {
 
     private var canLoadNextPage: Bool {
         items.count < totalCount
+    }
+
+    init(networkService: NetworkServiceProtocol = NetworkService.shared) {
+        self.networkService = networkService
     }
 
     func loadFirstPage() {
