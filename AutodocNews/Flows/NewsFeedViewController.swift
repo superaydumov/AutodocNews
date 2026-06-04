@@ -20,8 +20,9 @@ final class NewsFeedViewController: UIViewController {
     }
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, NewsFeedItem>?
+    private weak var footerLoaderView: NewsFooterLoaderView?
     private let cellHeight: CGFloat = 180
-    private let triggerAmountLimit = 5
+    private let footerHeight: CGFloat = 48
 
     // MARK: - Computed properties
 
@@ -30,9 +31,16 @@ final class NewsFeedViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.delegate = self
         collectionView.refreshControl = refreshControl
+
         collectionView.register(
             NewsCell.self,
             forCellWithReuseIdentifier: NewsCell.reuseIdentifier
+        )
+
+        collectionView.register(
+            NewsFooterLoaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
+            withReuseIdentifier: NewsFooterLoaderView.reuseIdentifier
         )
 
         return collectionView
@@ -63,7 +71,7 @@ final class NewsFeedViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        title = "Новости"
+        title = "Новости Autodoc"
 
         setupSubViews()
         setupDataSource()
@@ -79,13 +87,14 @@ extension NewsFeedViewController: UICollectionViewDelegate {
 
     func collectionView(
         _ collectionView: UICollectionView,
-        willDisplay cell: UICollectionViewCell,
-        forItemAt indexPath: IndexPath
+        willDisplaySupplementaryView view: UICollectionReusableView,
+        forElementKind elementKind: String,
+        at indexPath: IndexPath
     ) {
-        let markerItem = viewModel.items.count - triggerAmountLimit
-        if indexPath.item >= markerItem {
-            viewModel.loadNextPageIfNeeded()
-        }
+        guard elementKind == UICollectionView.elementKindSectionFooter,
+              let footer = view as? NewsFooterLoaderView else { return }
+        footer.startAnimating()
+        viewModel.loadNextPageIfNeeded()
     }
 }
 
@@ -135,6 +144,17 @@ private extension NewsFeedViewController {
             )
             section.interGroupSpacing = AppSpacing.small
 
+            let footerSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .absolute(self.footerHeight)
+            )
+            let footer = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: footerSize,
+                elementKind: UICollectionView.elementKindSectionFooter,
+                alignment: .bottom
+            )
+            section.boundarySupplementaryItems = [footer]
+
             return section
         }
     }
@@ -154,6 +174,18 @@ private extension NewsFeedViewController {
             cell.configure(with: item)
 
             return cell
+        }
+
+        dataSource?.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+            guard let self, kind == UICollectionView.elementKindSectionFooter else { return nil }
+            let footer = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: NewsFooterLoaderView.reuseIdentifier,
+                for: indexPath
+            ) as? NewsFooterLoaderView
+            self.footerLoaderView = footer
+
+            return footer
         }
     }
 
@@ -180,6 +212,10 @@ private extension NewsFeedViewController {
                     if !isLoading {
                         self.refreshControl.endRefreshing()
                     }
+                }
+
+                if !isLoading {
+                    self.footerLoaderView?.stopAnimating()
                 }
             }
             .store(in: &cancellables)

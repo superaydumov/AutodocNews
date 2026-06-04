@@ -33,10 +33,10 @@ final class NewsFeedViewModel: ObservableObject {
     func loadNextPageIfNeeded() {
         guard !isLoading, canLoadNextPage else { return }
 
-        loadingTask = Task {
-            isLoading = true
-            errorMessage = nil
+        isLoading = true
+        errorMessage = nil
 
+        loadingTask = Task {
             do {
                 let response = try await networkService.fetchNewsFeed(
                     page: currentPage,
