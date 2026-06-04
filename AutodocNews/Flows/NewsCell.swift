@@ -14,6 +14,7 @@ final class NewsCell: UICollectionViewCell {
     static let reuseIdentifier = "NewsCell"
     private let categoryPaddingHeight: CGFloat = 24
     private var imageLoadTask: Task<Void, Never>?
+    private let dateFormatter = DateFormatter()
 
     // MARK: - Computed properties
 
@@ -102,7 +103,7 @@ final class NewsCell: UICollectionViewCell {
     func configure(with item: NewsFeedItem) {
         titleLabel.text = item.title
         categoryLabel.text = item.categoryType
-        dateLabel.text = item.publishedDate
+        dateLabel.text = dateFormatter.formatDate(item.publishedDate)
 
         imageLoadTask?.cancel()
         paddingImageView.image = nil
