@@ -54,6 +54,17 @@ final class NewsFeedViewController: UIViewController {
         return loader
     }()
 
+    private lazy var errorPlaceholderView: ErrorPlaceholderView = {
+        let view = ErrorPlaceholderView()
+        view.isHidden = true
+        view.onRetry = { [weak self] in
+            guard let self else { return }
+            self.refreshData()
+        }
+        
+        return view
+    }()
+
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addAction(
@@ -127,7 +138,11 @@ private extension NewsFeedViewController {
     // MARK: Layout methods
 
     func setupSubViews() {
-        [collectionView, activityIndicator].forEach {
+        [
+            collectionView,
+            activityIndicator,
+            errorPlaceholderView
+        ].forEach {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
@@ -139,7 +154,12 @@ private extension NewsFeedViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+            errorPlaceholderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            errorPlaceholderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorPlaceholderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorPlaceholderView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
@@ -245,21 +265,30 @@ private extension NewsFeedViewController {
                 case .loadingFirstPage:
                     activityIndicator.startAnimating()
                     collectionView.isHidden = true
+                    errorPlaceholderView.isHidden = true
                 case .loadingNextPage:
                     break
                 case .idle:
                     activityIndicator.stopAnimating()
                     collectionView.isHidden = false
+                    errorPlaceholderView.isHidden = true
                     refreshControl.endRefreshing()
                     currentFooterView()?.stopAnimating()
                 case .error(let message):
                     activityIndicator.stopAnimating()
-                    collectionView.isHidden = false
                     refreshControl.endRefreshing()
                     currentFooterView()?.stopAnimating()
-                    viewModel.showError(message) { [weak self] in
-                        guard let self else { return }
-                        self.refreshData()
+
+                    if viewModel.items.isEmpty {
+                        collectionView.isHidden = true
+                        errorPlaceholderView.isHidden = false
+                    } else {
+                        collectionView.isHidden = false
+                        errorPlaceholderView.isHidden = true
+                        viewModel.showError(message) { [weak self] in
+                            guard let self else { return }
+                            self.viewModel.loadNextPageIfNeeded()
+                        }
                     }
                 }
             }
