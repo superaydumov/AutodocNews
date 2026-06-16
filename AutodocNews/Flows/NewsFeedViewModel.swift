@@ -7,12 +7,22 @@
 
 import Foundation
 
+enum ViewState: Equatable {
+    case idle
+    case loadingFirstPage
+    case loadingNextPage
+    case error(String)
+
+    var isLoading: Bool {
+        self == .loadingFirstPage || self == .loadingNextPage
+    }
+}
+
 @MainActor
 final class NewsFeedViewModel: ObservableObject {
 
     @Published var items = [NewsFeedItem]()
-    @Published var isLoading: Bool = false
-    @Published var errorMessage: String?
+    @Published var state: ViewState = .idle
 
     private let networkService: NetworkServiceProtocol
 
@@ -36,10 +46,9 @@ final class NewsFeedViewModel: ObservableObject {
     }
 
     func loadNextPageIfNeeded() {
-        guard !isLoading, canLoadNextPage else { return }
+        guard !state.isLoading, canLoadNextPage else { return }
 
-        isLoading = true
-        errorMessage = nil
+        state = items.isEmpty ? .loadingFirstPage : .loadingNextPage
 
         loadingTask = Task {
             do {
@@ -51,12 +60,15 @@ final class NewsFeedViewModel: ObservableObject {
                 totalCount = response.totalCount
                 items.append(contentsOf: response.news)
                 currentPage += 1
+                state = .idle
             } catch {
-                errorMessage = error.localizedDescription
+                state = .error(error.localizedDescription)
             }
-
-            isLoading = false
         }
+    }
+
+    func createAlert() {
+        
     }
 
     deinit {
