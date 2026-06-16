@@ -7,7 +7,7 @@ iOS-приложение для просмотра новостной ленты
 ## Стек технологий
 
 - **UIKit** — вёрстка без Storyboard, только код
-- **MVVM + Combine** — архитектура и реактивные биндинги
+- **MVVM + Coordinator + Combine** — архитектура и реактивные биндинги
 - **UICollectionView + CompositionalLayout + DiffableDataSource** — лента новостей
 - **async/await** — все сетевые запросы
 - Только стандартные фреймворки Apple без сторонних зависимостей
