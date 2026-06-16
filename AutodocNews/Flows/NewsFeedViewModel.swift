@@ -21,6 +21,8 @@ enum ViewState: Equatable {
 @MainActor
 final class NewsFeedViewModel: ObservableObject {
 
+    weak var coordinator: NewsFeedCoordinatorProtocol?
+
     @Published var items = [NewsFeedItem]()
     @Published var state: ViewState = .idle
 
@@ -35,7 +37,11 @@ final class NewsFeedViewModel: ObservableObject {
         items.count < totalCount
     }
 
-    init(networkService: NetworkServiceProtocol = NetworkService.shared) {
+    init(
+        coordinator: NewsFeedCoordinatorProtocol,
+        networkService: NetworkServiceProtocol = NetworkService.shared
+    ) {
+        self.coordinator = coordinator
         self.networkService = networkService
     }
 
@@ -67,8 +73,8 @@ final class NewsFeedViewModel: ObservableObject {
         }
     }
 
-    func createAlert() {
-        
+    func showError(_ message: String, retryAction: @escaping () -> Void) {
+        coordinator?.showError(message, retryAction: retryAction)
     }
 
     deinit {

@@ -13,7 +13,7 @@ final class NewsFeedViewController: UIViewController {
 
     // MARK: - Stored properties
 
-    private let viewModel = NewsFeedViewModel()
+    private let viewModel: NewsFeedViewModel
     private var cancellables = Set<AnyCancellable>()
 
     private enum Section {
@@ -66,6 +66,16 @@ final class NewsFeedViewController: UIViewController {
 
         return refreshControl
     }()
+
+    // MARK: - Initialisers
+
+    init(viewModel: NewsFeedViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
 
     // MARK: - Lifecycle
 
@@ -247,7 +257,10 @@ private extension NewsFeedViewController {
                     collectionView.isHidden = false
                     refreshControl.endRefreshing()
                     currentFooterView()?.stopAnimating()
-                    presentError(message)
+                    viewModel.showError(message) { [weak self] in
+                        guard let self else { return }
+                        self.refreshData()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -263,38 +276,6 @@ private extension NewsFeedViewController {
 
     func refreshData() {
         viewModel.loadFirstPage()
-    }
-
-    // MARK: Error handling
-
-    func presentError(_ message: String) {
-        let alert = UIAlertController(
-            title: "Ошибка",
-            message: message,
-            preferredStyle: .alert
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "Повторить",
-                style: .default
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.refreshData()
-            }
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "Отмена",
-                style: .destructive
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.refreshControl.endRefreshing()
-            }
-        )
-
-        present(alert, animated: true)
     }
 
     func currentFooterView() -> NewsFooterLoaderView? {

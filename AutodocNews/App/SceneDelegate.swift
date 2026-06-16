@@ -10,6 +10,7 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+    private var coordinator: NewsFeedCoordinator?
 
     func scene(
         _ scene: UIScene,
@@ -19,9 +20,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let scene = scene as? UIWindowScene else { return }
 
         let window = UIWindow(windowScene: scene)
-        let navigationController = UINavigationController(
-            rootViewController: NewsFeedViewController()
-        )
+        let navigationController = UINavigationController()
+
+        coordinator = NewsFeedCoordinator(navigationController: navigationController)
+        coordinator?.start()
 
         window.rootViewController = navigationController
         self.window = window
