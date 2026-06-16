@@ -177,11 +177,11 @@ private extension NewsFeedViewController {
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = NSDirectionalEdgeInsets(
                 top: AppSpacing.small,
-                leading: AppSpacing.medium,
+                leading: 0,
                 bottom: AppSpacing.small,
-                trailing: AppSpacing.medium
+                trailing: 0
             )
-            section.contentInsetsReference = .none
+            section.contentInsetsReference = .layoutMargins
             section.interGroupSpacing = AppSpacing.small
 
             let footerSize = NSCollectionLayoutSize(
