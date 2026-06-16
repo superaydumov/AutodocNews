@@ -13,7 +13,7 @@ final class NewsFeedViewController: UIViewController {
 
     // MARK: - Stored properties
 
-    private let viewModel = NewsFeedViewModel()
+    private let viewModel: NewsFeedViewModel
     private var cancellables = Set<AnyCancellable>()
 
     private enum Section {
@@ -21,7 +21,6 @@ final class NewsFeedViewController: UIViewController {
     }
 
     private var dataSource: UICollectionViewDiffableDataSource<Section, NewsFeedItem>?
-    private weak var footerLoaderView: NewsFooterLoaderView?
     private let cellHeight: CGFloat = 180
     private let footerHeight: CGFloat = 48
     private let widthParameter: CGFloat = 900
@@ -67,6 +66,16 @@ final class NewsFeedViewController: UIViewController {
 
         return refreshControl
     }()
+
+    // MARK: - Initialisers
+
+    init(viewModel: NewsFeedViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
 
     // MARK: - Lifecycle
 
@@ -168,10 +177,11 @@ private extension NewsFeedViewController {
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = NSDirectionalEdgeInsets(
                 top: AppSpacing.small,
-                leading: AppSpacing.medium,
+                leading: 0,
                 bottom: AppSpacing.small,
-                trailing: AppSpacing.medium
+                trailing: 0
             )
+            section.contentInsetsReference = .layoutMargins
             section.interGroupSpacing = AppSpacing.small
 
             let footerSize = NSCollectionLayoutSize(
@@ -208,16 +218,13 @@ private extension NewsFeedViewController {
             return cell
         }
 
-        dataSource?.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
-            guard let self, kind == UICollectionView.elementKindSectionFooter else { return nil }
-            let footer = collectionView.dequeueReusableSupplementaryView(
+        dataSource?.supplementaryViewProvider = { collectionView, kind, indexPath in
+            guard kind == UICollectionView.elementKindSectionFooter else { return nil }
+            return collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
                 withReuseIdentifier: NewsFooterLoaderView.reuseIdentifier,
                 for: indexPath
             ) as? NewsFooterLoaderView
-            self.footerLoaderView = footer
-
-            return footer
         }
     }
 
@@ -230,34 +237,31 @@ private extension NewsFeedViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.$isLoading
-            .combineLatest(viewModel.$items)
+        viewModel.$state
             .receive(on: RunLoop.main)
-            .sink { [weak self] isLoading, items in
+            .sink { [weak self] state in
                 guard let self else { return }
-                if isLoading && items.isEmpty {
-                    self.activityIndicator.startAnimating()
-                    self.collectionView.isHidden = true
-                } else {
-                    self.activityIndicator.stopAnimating()
-                    self.collectionView.isHidden = false
-                    if !isLoading {
-                        self.refreshControl.endRefreshing()
+                switch state {
+                case .loadingFirstPage:
+                    activityIndicator.startAnimating()
+                    collectionView.isHidden = true
+                case .loadingNextPage:
+                    break
+                case .idle:
+                    activityIndicator.stopAnimating()
+                    collectionView.isHidden = false
+                    refreshControl.endRefreshing()
+                    currentFooterView()?.stopAnimating()
+                case .error(let message):
+                    activityIndicator.stopAnimating()
+                    collectionView.isHidden = false
+                    refreshControl.endRefreshing()
+                    currentFooterView()?.stopAnimating()
+                    viewModel.showError(message) { [weak self] in
+                        guard let self else { return }
+                        self.refreshData()
                     }
                 }
-
-                if !isLoading {
-                    self.footerLoaderView?.stopAnimating()
-                }
-            }
-            .store(in: &cancellables)
-
-        viewModel.$errorMessage
-            .compactMap { $0 }
-            .receive(on: RunLoop.main)
-            .sink { [weak self] errorMessage in
-                guard let self else { return }
-                self.showError(errorMessage)
             }
             .store(in: &cancellables)
     }
@@ -271,39 +275,13 @@ private extension NewsFeedViewController {
     }
 
     func refreshData() {
-        refreshControl.endRefreshing()
         viewModel.loadFirstPage()
     }
 
-    // MARK: Error handling
-
-    func showError(_ message: String) {
-        let alert = UIAlertController(
-            title: "Ошибка",
-            message: message,
-            preferredStyle: .alert
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "Повторить",
-                style: .default
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.refreshData()
-            }
-        )
-
-        alert.addAction(
-            UIAlertAction(
-                title: "Отмена",
-                style: .destructive
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.refreshControl.endRefreshing()
-            }
-        )
-
-        present(alert, animated: true)
+    func currentFooterView() -> NewsFooterLoaderView? {
+        collectionView.supplementaryView(
+            forElementKind: UICollectionView.elementKindSectionFooter,
+            at: IndexPath(item: 0, section: 0)
+        ) as? NewsFooterLoaderView
     }
 }

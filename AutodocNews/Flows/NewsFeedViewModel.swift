@@ -7,12 +7,24 @@
 
 import Foundation
 
+enum ViewState: Equatable {
+    case idle
+    case loadingFirstPage
+    case loadingNextPage
+    case error(String)
+
+    var isLoading: Bool {
+        self == .loadingFirstPage || self == .loadingNextPage
+    }
+}
+
 @MainActor
 final class NewsFeedViewModel: ObservableObject {
 
+    weak var coordinator: NewsFeedCoordinatorProtocol?
+
     @Published var items = [NewsFeedItem]()
-    @Published var isLoading: Bool = false
-    @Published var errorMessage: String?
+    @Published var state: ViewState = .idle
 
     private let networkService: NetworkServiceProtocol
 
@@ -25,7 +37,11 @@ final class NewsFeedViewModel: ObservableObject {
         items.count < totalCount
     }
 
-    init(networkService: NetworkServiceProtocol = NetworkService.shared) {
+    init(
+        coordinator: NewsFeedCoordinatorProtocol,
+        networkService: NetworkServiceProtocol = NetworkService.shared
+    ) {
+        self.coordinator = coordinator
         self.networkService = networkService
     }
 
@@ -36,10 +52,9 @@ final class NewsFeedViewModel: ObservableObject {
     }
 
     func loadNextPageIfNeeded() {
-        guard !isLoading, canLoadNextPage else { return }
+        guard !state.isLoading, canLoadNextPage else { return }
 
-        isLoading = true
-        errorMessage = nil
+        state = items.isEmpty ? .loadingFirstPage : .loadingNextPage
 
         loadingTask = Task {
             do {
@@ -51,12 +66,15 @@ final class NewsFeedViewModel: ObservableObject {
                 totalCount = response.totalCount
                 items.append(contentsOf: response.news)
                 currentPage += 1
+                state = .idle
             } catch {
-                errorMessage = error.localizedDescription
+                state = .error(error.localizedDescription)
             }
-
-            isLoading = false
         }
+    }
+
+    func showError(_ message: String, retryAction: @escaping () -> Void) {
+        coordinator?.showError(message, retryAction: retryAction)
     }
 
     deinit {

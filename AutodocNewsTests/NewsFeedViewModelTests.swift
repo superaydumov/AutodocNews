@@ -104,8 +104,7 @@ final class NewsFeedViewModelTests: XCTestCase {
         await loadAndWait()
 
         XCTAssertEqual(viewModel.items.count, 5)
-        XCTAssertNil(viewModel.errorMessage)
-        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertEqual(viewModel.state, .idle)
     }
 
     func testLoadIncrementsPage() async {
@@ -128,23 +127,28 @@ final class NewsFeedViewModelTests: XCTestCase {
 
     // MARK: - Error handling test
 
-    func testLoadSetsErrorMessageOnFailure() async {
+    func testLoadSetsErrorStateOnFailure() async {
         mockNetworkService.result = .failure(URLError(.notConnectedToInternet))
         await loadAndWait()
 
-        XCTAssertNotNil(viewModel.errorMessage)
-        XCTAssertFalse(viewModel.isLoading)
+        if case .error = viewModel.state { } else {
+            XCTFail("Expected error state, got \(viewModel.state)")
+        }
+        XCTAssertFalse(viewModel.state.isLoading)
     }
 
-    func testLoadClearsErrorMessageOnRetry() async {
+    func testLoadClearsErrorStateOnRetry() async {
         mockNetworkService.result = .failure(URLError(.notConnectedToInternet))
         await loadAndWait()
-        XCTAssertNotNil(viewModel.errorMessage)
+
+        if case .error = viewModel.state { } else {
+            XCTFail("Expected error state after failure")
+        }
 
         mockNetworkService.result = .success(makeResponse(count: 2, total: 2))
         await loadAndWait()
 
-        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertEqual(viewModel.state, .idle)
     }
 
     func testLoadDoNotAppendItemsOnFailure() async {
@@ -159,13 +163,13 @@ final class NewsFeedViewModelTests: XCTestCase {
     func testIsLoadingAfterSuccess() async {
         mockNetworkService.result = .success(makeResponse(count: 1, total: 1))
         await loadAndWait()
-        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.state.isLoading)
     }
 
     func testIsLoadingAfterFailure() async {
         mockNetworkService.result = .failure(URLError(.cancelled))
         await loadAndWait()
-        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.state.isLoading)
     }
 
     // MARK: - Helpers
@@ -195,7 +199,7 @@ final class NewsFeedViewModelTests: XCTestCase {
         await Task.yield()
 
         var attempts = 0
-        while viewModel.isLoading, attempts < 50 {
+        while viewModel.state.isLoading, attempts < 50 {
             await Task.yield()
             attempts += 1
         }
