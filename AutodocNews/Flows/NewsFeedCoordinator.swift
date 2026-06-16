@@ -8,7 +8,7 @@
 import UIKit
 
 protocol NewsFeedCoordinatorProtocol: AnyObject {
-    func showError(_ message: String, retryAction: @escaping () -> Void)
+    func showError(_ message: String, retryAction: @escaping () -> Void, cancelAction: @escaping () -> Void)
 }
 
 final class NewsFeedCoordinator: NewsFeedCoordinatorProtocol {
@@ -26,7 +26,11 @@ final class NewsFeedCoordinator: NewsFeedCoordinatorProtocol {
         navigationController.setViewControllers([viewController], animated: false)
     }
 
-    func showError(_ message: String, retryAction: @escaping () -> Void) {
+    func showError(
+        _ message: String,
+        retryAction: @escaping () -> Void,
+        cancelAction: @escaping () -> Void
+    ) {
         let alert = UIAlertController(
             title: "Ошибка",
             message: message,
@@ -37,7 +41,9 @@ final class NewsFeedCoordinator: NewsFeedCoordinatorProtocol {
             retryAction()
         })
 
-        alert.addAction(UIAlertAction(title: "Отмена", style: .destructive))
+        alert.addAction(UIAlertAction(title: "Отмена", style: .destructive) { _ in
+            cancelAction()
+        })
 
         navigationController.present(alert, animated: true)
     }

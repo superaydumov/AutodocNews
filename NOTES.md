@@ -16,10 +16,11 @@
 
 ## Архитектура
 
-Паттерн **MVVM**:
+Паттерн **MVVM + Coordinator**:
 
-- `NewsFeedViewModel` содержит всю бизнес-логику: управление страницей, запросы к сети, агрегацию ошибок. `NewsFeedViewController` только наблюдает за `@Published`-свойствами и обновляет UI.
-- Combine (`sink`, `combineLatest`) позволяет соединить состояние вью-модели с реакцией вью-контроллера.
+- `NewsFeedViewModel` содержит всю бизнес-логику: управление страницей, запросы к сети, управление состоянием. `NewsFeedViewController` подписывается на `@Published`-свойства и обновляет UI.
+- `NewsFeedCoordinator` отвечает за навигацию и показ системных алертов, освобождая вью-контроллер от UIKit-логики, не связанной с отображением данных.
+- Combine (`sink`) соединяет состояние вью-модели с реакцией вью-контроллера через единый поток `$state`.
 - `NewsFeedViewModel` помечен `@MainActor`, что исключает ручное переключение потоков при изменении `@Published`-свойств.
 
 ## Ключевые компоненты
@@ -37,11 +38,19 @@
 
 ### NewsFeedViewModel
 
-Хранит текущую страницу, `totalCount` из ответа API и флаг `isLoading`.
+Хранит текущую страницу и `totalCount` из ответа API.
+Состояние экрана моделируется через `enum ViewState { case idle, loadingFirstPage, loadingNextPage, error(String) }` — взаимоисключающие  друг друга кейсы.
+
 Метод `loadNextPageIfNeeded` запускается как при первичной загрузке, так и при появлении footer-секции коллекции — это обеспечивает «бесконечный скролл» без таймеров или `willDisplayCell`.
 
-Гонки предотвращаются двойной проверкой: `guard !isLoading, canLoadNextPage`.
+Гонки предотвращаются проверкой: `guard !state.isLoading, canLoadNextPage`.
 `canLoadNextPage` сравнивает количество загруженных элементов с `totalCount` — загрузка останавливается, когда все новости получены.
+
+### NewsFeedCoordinator
+
+Создаётся в `SceneDelegate` и владеет `UINavigationController`.
+Инициализирует `NewsFeedViewModel` и `NewsFeedViewController`, связывая их.
+Метод `showError(_:retryAction:)` создаёт и презентует `UIAlertController` — вся UIKit-логика ошибок сосредоточена здесь.
 
 ### NewsCell
 
@@ -70,11 +79,12 @@
 
 ## Обработка ошибок
 
-При любой сетевой ошибке `NewsFeedViewModel` публикует `errorMessage`.
-Контроллер показывает `UIAlertController` с двумя действиями:
+При любой сетевой ошибке `NewsFeedViewModel` переходит в состояние `ViewState.error(String)`.
+`NewsFeedViewController` наблюдает за `$state` и при кейсе `.error` делегирует показ алерта координатору.
+`NewsFeedCoordinator` показывает `UIAlertController` с двумя действиями:
 
 - **Повторить** — вызывает `loadFirstPage()`, сбрасывая страницу и данные
-- **Отмена** — скрывает `refreshControl`, сохраняя уже загруженные данные
+- **Отмена** — закрывает алерт, сохраняя уже загруженные данные
 
 ---
 
@@ -82,7 +92,7 @@
 
 `UIRefreshControl` добавлен к коллекции.
 По срабатыванию вызывается `viewModel.loadFirstPage()` — список обнуляется и начинается загрузка с первой страницы.
-`refreshControl.endRefreshing()` вызывается при переходе `isLoading` в `false`.
+`refreshControl.endRefreshing()` вызывается при переходе `state` в `.idle`.
 
 ---
 

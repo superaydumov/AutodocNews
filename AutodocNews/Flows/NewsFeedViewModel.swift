@@ -38,7 +38,7 @@ final class NewsFeedViewModel: ObservableObject {
     }
 
     init(
-        coordinator: NewsFeedCoordinatorProtocol,
+        coordinator: NewsFeedCoordinatorProtocol? = nil,
         networkService: NetworkServiceProtocol = NetworkService.shared
     ) {
         self.coordinator = coordinator
@@ -74,7 +74,12 @@ final class NewsFeedViewModel: ObservableObject {
     }
 
     func showError(_ message: String, retryAction: @escaping () -> Void) {
-        coordinator?.showError(message, retryAction: retryAction)
+        coordinator?.showError(
+            message,
+            retryAction: retryAction) { [weak self] in
+                guard let self else { return }
+                self.state = .idle
+        }
     }
 
     deinit {
